@@ -49,8 +49,9 @@ func (r *postRepository) Create(ctx context.Context, post *model.Post) (*model.P
 func (r *postRepository) List(ctx context.Context, pagination model.Pagination) ([]model.PostListItem, int64, error) {
 	var posts []model.PostListItem
 	if err := r.db.SelectContext(ctx, &posts, `
-		SELECT id, title, slug, content, thumbnail, meta_title, meta_description, created_at, updated_at
+		SELECT id, title, slug, content, thumbnail, meta_title, meta_description, created_at, updated_at, deleted_at
 		FROM posts
+		WHERE deleted_at IS NULL
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?
 	`, pagination.PerPage, pagination.Offset); err != nil {
@@ -72,9 +73,10 @@ func (r *postRepository) ListPublic(ctx context.Context, pagination model.Pagina
 func (r *postRepository) GetByID(ctx context.Context, id int64) (*model.Post, error) {
 	var post model.Post
 	err := r.db.GetContext(ctx, &post, `
-		SELECT id, title, slug, content, thumbnail, meta_title, meta_description, created_at, updated_at
+		SELECT id, title, slug, content, thumbnail, meta_title, meta_description, created_at, updated_at, deleted_at
 		FROM posts
 		WHERE id = ?
+		  AND deleted_at IS NULL
 		LIMIT 1
 	`, id)
 	if err != nil {
@@ -89,9 +91,10 @@ func (r *postRepository) GetByID(ctx context.Context, id int64) (*model.Post, er
 func (r *postRepository) GetBySlug(ctx context.Context, slug string) (*model.Post, error) {
 	var post model.Post
 	err := r.db.GetContext(ctx, &post, `
-		SELECT id, title, slug, content, thumbnail, meta_title, meta_description, created_at, updated_at
+		SELECT id, title, slug, content, thumbnail, meta_title, meta_description, created_at, updated_at, deleted_at
 		FROM posts
 		WHERE slug = ?
+		  AND deleted_at IS NULL
 		LIMIT 1
 	`, slug)
 	if err != nil {
@@ -105,7 +108,7 @@ func (r *postRepository) GetBySlug(ctx context.Context, slug string) (*model.Pos
 
 func (r *postRepository) SlugExists(ctx context.Context, slug string, excludeID *int64) (bool, error) {
 	var count int
-	query := `SELECT COUNT(1) FROM posts WHERE slug = ?`
+	query := `SELECT COUNT(1) FROM posts WHERE slug = ? AND deleted_at IS NULL`
 	args := []any{slug}
 	if excludeID != nil {
 		query += ` AND id != ?`
@@ -123,6 +126,7 @@ func (r *postRepository) Update(ctx context.Context, post *model.Post) (*model.P
 		UPDATE posts
 		SET title = ?, slug = ?, content = ?, thumbnail = ?, meta_title = ?, meta_description = ?, updated_at = CURRENT_TIMESTAMP
 		WHERE id = ?
+		  AND deleted_at IS NULL
 	`, post.Title, post.Slug, post.Content, post.Thumbnail, post.MetaTitle, post.MetaDescription, post.ID)
 	if err != nil {
 		return nil, err
@@ -132,12 +136,17 @@ func (r *postRepository) Update(ctx context.Context, post *model.Post) (*model.P
 }
 
 func (r *postRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM posts WHERE id = ?`, id)
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE posts
+		SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+		  AND deleted_at IS NULL
+	`, id)
 	return err
 }
 
 func (r *postRepository) countPosts(ctx context.Context) (int64, error) {
 	var total int64
-	err := r.db.GetContext(ctx, &total, `SELECT COUNT(1) FROM posts`)
+	err := r.db.GetContext(ctx, &total, `SELECT COUNT(1) FROM posts WHERE deleted_at IS NULL`)
 	return total, err
 }

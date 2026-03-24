@@ -20,8 +20,6 @@ type Config struct {
 	DBName        string
 	JWTSecret     string
 	JWTExpiration time.Duration
-	AdminEmail    string
-	AdminPassword string
 }
 
 func Load() (*Config, error) {
@@ -39,8 +37,6 @@ func Load() (*Config, error) {
 		DBName:        os.Getenv("DB_NAME"),
 		JWTSecret:     os.Getenv("JWT_SECRET"),
 		JWTExpiration: time.Duration(expirationHours) * time.Hour,
-		AdminEmail:    os.Getenv("ADMIN_EMAIL"),
-		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
 	}
 
 	if cfg.DBHost == "" || cfg.DBUser == "" || cfg.DBName == "" || cfg.JWTSecret == "" {

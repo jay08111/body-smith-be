@@ -18,7 +18,6 @@ var ErrInvalidCredentials = errors.New("invalid email or password")
 type AuthService interface {
 	Login(ctx context.Context, req model.LoginRequest) (*model.LoginResponse, error)
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
-	BootstrapAdmin(ctx context.Context, email, password string) error
 }
 
 type authService struct {
@@ -74,29 +73,6 @@ func (s *authService) GetUserByEmail(ctx context.Context, email string) (*model.
 	}
 
 	return s.userRepo.GetByEmail(ctx, email)
-}
-
-func (s *authService) BootstrapAdmin(ctx context.Context, email, password string) error {
-	email = strings.TrimSpace(strings.ToLower(email))
-	if email == "" || password == "" {
-		return nil
-	}
-
-	existingUser, err := s.userRepo.GetByEmail(ctx, email)
-	if err != nil {
-		return err
-	}
-	if existingUser != nil {
-		return nil
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.userRepo.Create(ctx, email, string(hashedPassword))
-	return err
 }
 
 func (s *authService) generateJWT(user *model.User) (string, error) {

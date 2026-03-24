@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS posts (
     meta_description VARCHAR(500) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     INDEX idx_posts_created_at (created_at),
-    INDEX idx_posts_slug (slug)
+    INDEX idx_posts_slug (slug),
+    INDEX idx_posts_deleted_at (deleted_at)
 );

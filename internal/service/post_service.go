@@ -22,6 +22,7 @@ type PostService interface {
 	Create(ctx context.Context, req model.CreatePostRequest) (*model.Post, error)
 	ListAdmin(ctx context.Context, page, perPage int) (*model.PostListResponse, error)
 	ListPublic(ctx context.Context, page, perPage int) (*model.PostListResponse, error)
+	GetByID(ctx context.Context, id int64) (*model.Post, error)
 	GetBySlug(ctx context.Context, slug string) (*model.Post, error)
 	Update(ctx context.Context, id int64, req model.UpdatePostRequest) (*model.Post, error)
 	Delete(ctx context.Context, id int64) error
@@ -67,6 +68,17 @@ func (s *postService) ListAdmin(ctx context.Context, page, perPage int) (*model.
 
 func (s *postService) ListPublic(ctx context.Context, page, perPage int) (*model.PostListResponse, error) {
 	return s.list(ctx, page, perPage, false)
+}
+
+func (s *postService) GetByID(ctx context.Context, id int64) (*model.Post, error) {
+	post, err := s.postRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
+		return nil, ErrPostNotFound
+	}
+	return post, nil
 }
 
 func (s *postService) GetBySlug(ctx context.Context, slug string) (*model.Post, error) {

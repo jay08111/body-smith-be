@@ -51,6 +51,26 @@ func (h *PostHandler) ListAdminPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (h *PostHandler) GetAdminPost(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid post id")
+		return
+	}
+
+	post, err := h.postService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrPostNotFound) {
+			respondError(c, http.StatusNotFound, err.Error())
+			return
+		}
+		respondError(c, http.StatusInternalServerError, "failed to get post")
+		return
+	}
+
+	c.JSON(http.StatusOK, post)
+}
+
 func (h *PostHandler) UpdatePost(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

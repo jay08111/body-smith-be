@@ -51,6 +51,7 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestLogger())
+	router.Use(middleware.CORS())
 
 	api := router.Group("/api/v1")
 	{
@@ -73,6 +74,7 @@ func main() {
 			{
 				adminPosts.POST("", postHandler.CreatePost)
 				adminPosts.GET("", postHandler.ListAdminPosts)
+				adminPosts.GET("/:id", postHandler.GetAdminPost)
 				adminPosts.PUT("/:id", postHandler.UpdatePost)
 				adminPosts.DELETE("/:id", postHandler.DeletePost)
 			}
